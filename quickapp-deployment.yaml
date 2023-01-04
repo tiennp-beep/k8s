@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: quickapp-deployment
+  labels:     
+    app: quickapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:       
+      app: quickapp
+  template:
+    metadata:
+      labels:         
+        app: quickapp
+    spec:
+      containers:  
+      - name: quickapp
+        image: tiennp/quick-app:v10
+        ports:
+          - containerPort: 5000
+          - containerPort: 5001
+        env:
+        - name: ASPNETCORE_URLS
+          value: "https://+:5001;http://+:5000"
+        - name: ASPNETCORE_Kestrel__Certificates__Default__Password
+          value: "YourPassword"
+        - name: ASPNETCORE_Kestrel__Certificates__Default__Path
+          value: "/https/aspnetapp.pfx"
+        envFrom:
+        - configMapRef:
+            name: quickapp-configmap
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: quickapp-service
+  namespace: default
+spec:
+  type: NodePort
+  selector:
+    app: quickapp
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 5000
+      nodePort: 30007
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 5001
+      nodePort: 30008
